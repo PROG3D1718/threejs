@@ -1,5 +1,7 @@
+<!DOCTYPE html>
 <html>
 	<head>
+		<meta charset=utf-8>
 		<title>My first three.js app</title>
 		<style>
 			body { margin: 0; }
@@ -9,44 +11,64 @@
 	<body>
 		<script src="js/three.js"></script>
 		<script>
-			var scene = new THREE.Scene();
-			var camera = new THREE.PerspectiveCamera( 75, window.innerWidth/window.innerHeight, 0.1, 1000 );
+			// Our Javascript will go here.
 
+			// cria uma cena // create a scene
+			var scene = new THREE.Scene();
+			// cria uma camara // create a camera
+			var camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+			
+			// cria o renderer / create a renderer
 			var renderer = new THREE.WebGLRenderer();
 			renderer.setSize( window.innerWidth, window.innerHeight );
 			document.body.appendChild( renderer.domElement );
 
-			var geometry = new THREE.BoxGeometry( 1, 1, 1 );
-			var material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
+			// cria geometria
+			var wallGeom = new THREE.BoxGeometry( 1, 1, 1 );
+			var wallMat = new THREE.MeshBasicMaterial( { color: 0x00ff00, wireframe : false } );
+			var wall = new THREE.Mesh( wallGeom, wallMat );
+			
+			var roofGeom = new THREE.ConeGeometry( 1, 1, 20 );
+			var roofMat = new THREE.MeshBasicMaterial( { color: 0xffff00, wireframe : false } );
+			var roof = new THREE.Mesh( roofGeom, roofMat );
+			
+			// roof on top
+			roof.translateY(1.0);
+			
+			// home node with wall + roof
+			// almost indentical to Object3D, however semantically more clear 
+			// var home = new THREE.Object3D() // almost indentical to Object3D, however semantically more clear 
+			var home = new THREE.Group();
+			home.add( wall );
+			home.add( roof );
 
+			home.translateX(3.0);
+			
+			var rotatingHome = new THREE.Group();
+			rotatingHome.add( home );
 
-            var group = new THREE.Object3D();
-            var axesHelper2 = new THREE.AxesHelper( 5 );
-            group.add( axesHelper2 );
+			scene.add(rotatingHome);
 
+			// position the camera
+			camera.position.y = 10;
+			camera.position.z = 10;
 
-			var cube = new THREE.Mesh( geometry, material );
-			group.add( cube );
-
-            scene.add(group);
-
-
-            //var axesHelper = new THREE.AxesHelper( 5 );
-            //scene.add( axesHelper );
-
-
-			camera.position.z = 5;
-
-			var animate = function () {
-				requestAnimationFrame( animate );
-
-				group.rotation.x += 0.1;
-				group.rotation.y += 0.1;
-
-				renderer.render(scene, camera);
-			};
-
+			// point the camera to a specific target
+			camera.lookAt(new THREE.Vector3(0,0,0));
+			
 			animate();
+
+			function animate() {
+				renderer.render( scene, camera );
+				rotatingHome.rotation.y += 0.1;
+				window.requestAnimationFrame(animate);
+			}
+
+
+
+
+
+
 		</script>
 	</body>
 </html>

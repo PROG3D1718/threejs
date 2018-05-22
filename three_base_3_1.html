@@ -12,6 +12,7 @@
 	<body>
 		<script src="js/three.js"></script>
 		<script>
+
 			// cria uma cena // create a scene
 			var scene = new THREE.Scene();
 			// cria uma camara // create a camera
@@ -40,6 +41,12 @@
 			var home = new THREE.Group();
 			home.add( wall );
 			home.add( roof );
+
+			var homeAxesHelper = new THREE.AxesHelper( 5 );
+			home.add( homeAxesHelper );
+
+			var sceneAxesHelper = new THREE.AxesHelper( 5 );
+			scene.add( sceneAxesHelper );
 
 			home.translateX(6.0);
 			

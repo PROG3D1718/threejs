@@ -1,0 +1,266 @@
+<html>
+
+<head>
+	<style>
+		body {
+			/* set margin to 0 and overflow to hidden, to go fullscreen */
+			margin: 0;
+			overflow: hidden;
+		}
+	</style>
+	<script src="js/three.js"></script>
+	<script src="js/dat.gui.min.js"></script>
+	<script src="js/OrbitControls.js"></script>
+
+</head>
+
+<body id="container">
+</body>
+<script>
+	////////////////////////////////////////////////////////////////////////////////
+	// The idea is to buid a hierarchical model of a robot:
+	// the robot has a base (cylinder) 
+	// the robot has a arm connected to the base
+	// the arm consists in a joint (sphere) and in bone (cylinder)
+	// the robot has a hand ((arc of a torus) connected to the arm 
+	//
+	// Scene--> robotGROUP-->baseGROUP--> base
+	//                          |-----> armsGROUP--> armGROUP--> joint
+	//                                      |           |------> bone
+	//                                      |
+	//                                      |------> handGROUP--> hand
+	////////////////////////////////////////////////////////////////////////////////
+
+	// AXIS HELPER 
+	const _AXIS_ = true;
+
+	// LIGHT HELPER
+	const _LIGHT_ = false;
+
+	// GRID HELPER
+	const _GRID_ = true;
+
+	/*global THREE, Coordinates, $, document, window, dat*/
+
+	var camera, scene, renderer; // Fundamental Elements
+
+	var cameraControls; 		 // Navigation
+	var GUIMenu;				 // GUI menu
+	var GUIParams;				 // set of adjustable parameters
+
+	// var container = document.body;
+	var container = document.getElementById('container');
+
+	// CANVAS
+	var canvasWidth = window.innerWidth;
+	var canvasHeight = window.innerHeight;
+	var canvasRatio = canvasWidth / canvasHeight;
+
+	// RENDERER
+	renderer = new THREE.WebGLRenderer({
+		antialias: true
+	});
+	renderer.setSize(canvasWidth, canvasHeight);
+	renderer.setClearColor(0xDDDDFF, 1.0);
+
+	container.appendChild(renderer.domElement);
+
+	// CAMERA
+	camera = new THREE.PerspectiveCamera(50, canvasRatio, 1, 10000);
+	camera.position.set(100, 100, 100);
+	camera.lookAt(new THREE.Vector3(0, 0, 0));
+
+	// NAVIGATION : ORBIT CONTROLS
+	cameraControls = new THREE.OrbitControls(camera, renderer.domElement);
+
+	// ROBOT DIMENSIONS
+	var jointRadius = 10;
+	var baseRadius = 20;
+	var baseHeight = 20;
+	var armLength = 40;
+	var armRadius = 10;
+	var handLength = 20;
+	// AXIS HELPERS
+	var axisLength = 30;
+
+	//MATERIALS
+	// BASIC (no lights needed)
+	var robotMaterial2 = new THREE.MeshBasicMaterial({ color: "#FF55FF", wireframe: false });
+	var jointMaterial2 = new THREE.MeshBasicMaterial({ color: "#FF5555", wireframe: false });
+	var armsMaterial2 = new THREE.MeshBasicMaterial({ color: "#5555FF", wireframe: false });
+	var handsMaterial2 = new THREE.MeshBasicMaterial({ color: "#55FF55", wireframe: false });
+
+	// PHONG (need lights)
+	var robotMaterial = new THREE.MeshPhongMaterial({ color: "#FF55FF", wireframe: false, specular: "#FFFF00", shininess: 10 });
+	var jointMaterial = new THREE.MeshPhongMaterial({ color: "#FF5555", wireframe: false, specular: "#FFFFFF", shininess: 5 });
+	var armsMaterial = new THREE.MeshPhongMaterial({ color: "#5555FF", wireframe: false, specular: "#00FFFF", shininess: 15 });
+	var handsMaterial = new THREE.MeshPhongMaterial({ color: "#55FF55", wireframe: false, specular: "#FF00FF", shininess: 25 });
+
+	//SCENE HIERARCHY
+
+	//SCENE
+	scene = new THREE.Scene();
+
+	// ROBOT GROUP includes a baseGROUP
+	var robotGROUP = new THREE.Group();
+	scene.add(robotGROUP);
+
+	// BASE GROUP includes a base +  ARMS GROUP
+	var baseGROUP = new THREE.Group();
+	robotGROUP.add(baseGROUP);
+
+	// base MESH
+	var baseg = new THREE.CylinderGeometry(baseRadius, baseRadius, baseHeight, 32, 32);
+	var base = new THREE.Mesh(baseg, armsMaterial);
+	baseGROUP.add(base);
+	baseGROUP.position.set(0.0, baseHeight/2, 0.0);
+
+
+	// ARMS GROUP includes a ARM GROUP +  HAND GROUP
+	var armsGROUP = new THREE.Group();
+	baseGROUP.add(armsGROUP);
+	armsGROUP.position.set(0, baseHeight / 2 + jointRadius, 0);
+
+
+	// ARM GROUP includes armJoint + armBone
+	var armGROUP = new THREE.Group();
+	armsGROUP.add(armGROUP);
+
+	
+	// joint MESH
+	var armJointg = new THREE.SphereGeometry(jointRadius, 32, 32);
+	var armJoint = new THREE.Mesh(armJointg, jointMaterial);
+	armGROUP.add(armJoint);
+	armJoint.position.set(0, 0, 0);
+
+
+	// bone MESH
+	var armBoneg = new THREE.CylinderGeometry(armRadius, armRadius, armLength, 32, 32);
+	var armBone = new THREE.Mesh(armBoneg, armsMaterial);
+	armGROUP.add(armBone);
+	armBone.position.set(0, armLength / 2, 0);
+
+	
+	// HAND GROUP includes a hand
+	var handGROUP = new THREE.Group();
+	armsGROUP.add(handGROUP);
+	handGROUP.position.set(0.0, armLength, 0.0);
+
+	// HAND MESH
+	//var handg = new THREE.CylinderGeometry(0,handLength,handLength, 4, 40);
+	var handg = new THREE.TorusGeometry(handLength,handLength/10, 40, 40, 3/2*Math.PI);
+	var hand = new THREE.Mesh(handg, handsMaterial);
+	handGROUP.add(hand);
+	hand.rotateZ(3*Math.PI/4);
+	hand.position.set(0.0, handLength, 0.0);
+
+	// LIGHTS
+	// point light (as a bulb)
+	var plight = new THREE.PointLight(0xFF0000, 1, 1000);
+	plight.position.set(0, 50, -50);
+
+	// directional light (as the sunlight)
+	var dlight = new THREE.DirectionalLight(0x00FF00, 0.8);
+	dlight.position.set(0, 100, 100);
+	dlight.target = robotGROUP;
+
+	// ambient light (ubiquitous light)
+	var alight = new THREE.AmbientLight(0xFFFFFF, 0.5);
+
+	//LIGHTS	
+	scene.add(plight);
+	scene.add(dlight);
+	scene.add(alight);
+
+
+
+    // LIGHT HELPERS
+	if (_LIGHT_) {
+		var dlightHelper = new THREE.DirectionalLightHelper(dlight, 5);
+		scene.add(dlightHelper);
+		
+		var plightHelper = new THREE.PointLightHelper(plight, 5);
+		scene.add(plightHelper);
+	}
+
+    // GRID HELPERS
+	if (_GRID_) {
+		var gridSize 	= 500;
+		var gridDivs 	= 100;
+		
+		var gridHelper = new THREE.GridHelper(gridSize, gridDivs); 
+		scene.add(gridHelper);
+		}
+
+	// AXIS
+	if (_AXIS_) {
+		axisScene = new THREE.AxesHelper(50);
+		scene.add(axisScene);
+		
+		axisRobot = new THREE.AxesHelper(axisLength);
+		robotGROUP.add(axisRobot);
+		
+		axisArms = new THREE.AxesHelper(axisLength);
+		armsGROUP.add(axisArms);
+		
+		axisHands = new THREE.AxesHelper(axisLength);
+		handGROUP.add(axisHands);
+	}
+
+	function animate() {
+
+		cameraControls.update();
+
+		robotGROUP.rotation.y = deg2rad(effectController.rotBase);
+		armsGROUP.rotation.z = deg2rad(effectController.rotArms);
+		handGROUP.rotation.y = deg2rad(effectController.rotHandY);
+		robotGROUP.translateX(effectController.moveX);
+		robotGROUP.translateZ(effectController.moveZ);
+
+		renderer.render(scene, camera);
+
+		window.requestAnimationFrame(animate);
+
+	}
+
+	function deg2rad(deg) {
+		return Math.PI * deg / 180;
+	}
+
+	// the GUI interface to change controls
+	var gui = new dat.GUI();
+
+	var effectController = {
+		rotBase: 0.0,
+		rotArms: 0.0,
+		rotHandY: 0.0,
+		moveX : 0.0,
+		moveZ : 0.0,
+		reset : function () {
+			robotGROUP.position.set(0.0,0.0,0.0);
+			console.log("ola");
+		},
+		stop : function () {
+			this.moveX = 0.0;
+			this.moveZ = 0.0;
+		}
+
+	};
+
+	h = gui.addFolder("Rotation");
+	h.add(effectController, "rotBase", -180, 180, 1).name("Base");
+	h.add(effectController, "rotArms", -90, 90, 1).name("Arm");
+	h.add(effectController, "rotHandY", -180, 180, 1).name("HandY");
+	h = gui.addFolder("Move");
+	h.add(effectController, "moveX", -10.0, 10.0).step(0.25).name("moveX").listen();
+	h.add(effectController, "moveZ", -10.0, 10.0).step(0.25).name("moveZ").listen();
+	h.add(effectController, "reset").name("Reset");
+	h.add(effectController, "stop").name("Stop");
+
+
+	animate();						// render loop
+
+
+</script>
+
+</html>
