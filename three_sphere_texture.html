@@ -16,23 +16,12 @@
 				overflow: hidden;
 			}
 
-			#info {
-				position: absolute;
-				top: 0px; width: 100%;
-				padding: 5px;
-			}
-
-			a {
-
-				color: #0080ff;
-			}
 
 		</style>
 	</head>
 	<body>
 
 		<div id="container"></div>
-		<div id="info"><a href="http://threejs.org" target="_blank" rel="noopener">three.js</a> - earth demo</div>
 
         <script src="js/three.js"></script>
         <script src="js/OrbitControls.js"></script>
@@ -73,10 +62,21 @@
 				// earth
 
 				var loader = new THREE.TextureLoader();
-				//loader.load( 'textures/land_ocean_ice_cloud_2048.jpg', function ( texture ) {
-                loader.load( 'textures/teste.png', function ( texture ) {
+                
 
-					var geometry = new THREE.SphereGeometry( 200, 20, 20, 0, Math.PI*2, 0, Math.PI/2 );
+                // north hemisphere
+                var texURL = 'textures/land_ocean_ice_cloud_2048_north.jpg';
+
+                 // complete earth
+                 // var texURL = 'textures/land_ocean_ice_cloud_2048.jpg';
+
+				loader.load( texURL, function ( texture ) {
+
+					//complete sphere
+                    // var geometry = new THREE.SphereGeometry( 200, 20, 20);
+                    
+                    // north hemisphere
+                    var geometry = new THREE.SphereGeometry( 200, 20, 20, 0, Math.PI*2, 0, Math.PI/2 );
 
 					var material = new THREE.MeshBasicMaterial( { map: texture, overdraw: 0.5 } );
 					var mesh = new THREE.Mesh( geometry, material );
@@ -84,48 +84,11 @@
 
 				} );
 
-				// shadow
-
-				var canvas = document.createElement( 'canvas' );
-				canvas.width = 128;
-				canvas.height = 128;
-
-				var context = canvas.getContext( '2d' );
-				var gradient = context.createRadialGradient(
-					canvas.width / 2,
-					canvas.height / 2,
-					0,
-					canvas.width / 2,
-					canvas.height / 2,
-					canvas.width / 2
-				);
-				gradient.addColorStop( 0.1, 'rgba(210,210,210,1)' );
-				gradient.addColorStop( 1, 'rgba(255,255,255,1)' );
-
-				context.fillStyle = gradient;
-				context.fillRect( 0, 0, canvas.width, canvas.height );
-
-				var texture = new THREE.CanvasTexture( canvas );
-
-				var geometry = new THREE.PlaneBufferGeometry( 300, 300, 3, 3 );
-				var material = new THREE.MeshBasicMaterial( { map: texture, overdraw: 0.5 } );
-
-				var mesh = new THREE.Mesh( geometry, material );
-				mesh.position.y = - 250;
-				mesh.rotation.x = - Math.PI / 2;
-				group.add( mesh );
-
+				
 				renderer = new THREE.WebGLRenderer();
 				renderer.setPixelRatio( window.devicePixelRatio );
 				renderer.setSize( window.innerWidth, window.innerHeight );
 				container.appendChild( renderer.domElement );
-
-				//stats = new Stats();
-				//container.appendChild( stats.dom );
-
-				document.addEventListener( 'mousemove', onDocumentMouseMove, false );
-
-				//
 
 				window.addEventListener( 'resize', onWindowResize, false );
 
@@ -146,33 +109,19 @@
 
 			}
 
-			function onDocumentMouseMove( event ) {
-
-				mouseX = ( event.clientX - windowHalfX );
-				mouseY = ( event.clientY - windowHalfY );
-
-			}
-
-			//
 
 			function animate() {
 
 				requestAnimationFrame( animate );
                 cameraControls.update();
 
-				render();
+				renderer.render( scene, camera );
 				//stats.update();
 
 			}
 
-			function render() {
-
-
-				camera.lookAt( scene.position );
-
-				renderer.render( scene, camera );
-
-			}
+	
+			
 
 
 		</script>
