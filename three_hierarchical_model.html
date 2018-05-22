@@ -115,24 +115,20 @@
 	baseGROUP.add(base);
 	baseGROUP.position.set(0.0, baseHeight/2, 0.0);
 
-
 	// ARMS GROUP includes a ARM GROUP +  HAND GROUP
 	var armsGROUP = new THREE.Group();
 	baseGROUP.add(armsGROUP);
 	armsGROUP.position.set(0, baseHeight / 2 + jointRadius, 0);
 
-
 	// ARM GROUP includes armJoint + armBone
 	var armGROUP = new THREE.Group();
 	armsGROUP.add(armGROUP);
-
 	
 	// joint MESH
 	var armJointg = new THREE.SphereGeometry(jointRadius, 32, 32);
 	var armJoint = new THREE.Mesh(armJointg, jointMaterial);
 	armGROUP.add(armJoint);
 	armJoint.position.set(0, 0, 0);
-
 
 	// bone MESH
 	var armBoneg = new THREE.CylinderGeometry(armRadius, armRadius, armLength, 32, 32);
