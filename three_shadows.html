@@ -1,0 +1,197 @@
+<html> 
+
+<head>
+	<script src="js/three.js"></script>
+	<script src="js/dat.gui.min.js"></script>
+	<script src="js/OrbitControls.js"></script>
+	<script src="js/stats.js"></script>
+
+</head>
+
+<body>
+
+</body>
+<script>
+			// uma cena
+			var myscene = new THREE.Scene();
+
+
+			
+			// uma câmara
+			// new THREE.PerspectiveCamera( fov, largura / altura, near, far )
+			var mycamera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 1000 );
+
+			mycamera.position.set(6,8,6);
+			mycamera.lookAt(myscene.position);
+            myscene.add( mycamera );
+
+
+
+            // um renderer
+			var myrenderer = new THREE.WebGLRenderer();
+			myrenderer.setSize(window.innerWidth,window.innerHeight);
+			myrenderer.setClearColor(0xAAAAAA, 1);
+
+			// sombras
+            myrenderer.shadowMap.enabled = true;
+            myrenderer.shadowMapSoft = true;
+
+			// colocar o canvas / resultado do renderer na página
+			var mycanvas = myrenderer.domElement;
+			document.body.appendChild(mycanvas);
+
+			// NAVIGATION : ORBIT CONTROLS
+			cameraControls = new THREE.OrbitControls(mycamera, myrenderer.domElement);
+
+			stats = new Stats();
+			document.body.appendChild( stats.dom );
+
+			// criar uns eixos
+			myaxis = new THREE.AxesHelper(20);
+			myscene.add(myaxis);
+
+			
+			objectog = new THREE.BoxGeometry(1,1,1)
+			objectom = new THREE.MeshBasicMaterial({color:0xFFFFFF,wireframe:false});
+			objectom2 = new THREE.MeshPhongMaterial({color:0x00FF00,wireframe:false});
+
+			objecto = new THREE.Mesh(objectog,objectom2);
+			objecto.position.set(0,1,0);
+			
+			objecto.castShadow = true;
+			objecto.receiveShadow = true;
+			
+			myscene.add(objecto);
+
+
+			miniobjectog = new THREE.BoxGeometry(0.15,0.15,0.15);
+			miniobjectom = new THREE.MeshBasicMaterial({color:0x00FF00,wireframe:false});
+			
+			miniobjecto = new THREE.Mesh(miniobjectog,miniobjectom);
+			
+			miniobjecto.position.set(0,3,0);
+
+			miniobjecto.castShadow = true;
+			miniobjecto.receiveShadow = false;
+
+			myscene.add(miniobjecto);
+
+			planeg = new THREE.PlaneGeometry(10,10);
+			planem = new THREE.MeshBasicMaterial({color:0x8888FF});
+			planem2 = new THREE.MeshPhongMaterial({color:0xAAAAFF, specular:0xAAAAFF});
+			planem3 = new THREE.MeshPhongMaterial({color:0xAAAAFF});
+			
+
+			plane = new THREE.Mesh(planeg,planem2);
+
+
+
+
+			plane.rotation.x = - Math.PI / 2;
+			plane.position.y = 0;
+
+			// cast and receive
+			plane.castShadow = false;
+			plane.receiveShadow = true;
+
+			myscene.add(plane);
+
+			//luzes
+			var spotLight = new THREE.SpotLight(0xFFFFFF,0.5);
+			
+			// lookAt is a direction
+			//spotLight.lookAt(new THREE.Vector3(5.0,5.0,0.0));
+            spotLight.position.set(0, 5, 0);
+
+            spotLight.angle = Math.PI/4;
+            spotLight.castShadow = true;
+			spotLight.penumbra = 0.2;
+
+			slh = new THREE.SpotLightHelper(spotLight);
+			myscene.add(slh);
+
+
+			// dummy object to target
+			var targetObject = new THREE.Object3D();
+			myscene.add(targetObject);
+			spotLight.target = targetObject;
+
+
+			
+       	    //spotLight.shadowCameraVisible = true;
+        
+            spotLight.shadow.camera.near = 1;         // seems to be important
+            spotLight.shadow.camera.far = 100;
+            spotLight.shadow.camera.fov = 25;
+		    spotLight.shadow.bias = -0.00022;        // adjust bias to remove artifacts (can be tricky, so I've heard)
+		    spotLight.shadow.mapSize.width = 1024;
+            spotLight.shadow.mapSize.height = 1024;
+
+            myscene.add(spotLight);
+
+            //var ambient = new THREE.AmbientLight( 0x555555 );
+            //myscene.add(ambient);
+
+
+            var dirlight = new THREE.DirectionalLight( 0xFFFF00, 0.5 );
+			dirlight.position.set(0,5,2);
+			
+            dirlight.castShadow = true;
+            myscene.add(dirlight);
+
+			dlh = new THREE.DirectionalLightHelper(dirlight);
+			myscene.add(dlh);
+
+				// objecto	
+			var rotControls = {
+				rotx:0.000,
+				roty:0.000,
+				rotz:0.000
+			}
+			
+			var guirc = new dat.GUI();
+			
+			guirc.add(rotControls,'rotx',-.25,.25,0.05);
+			guirc.add(rotControls,'roty',-.25,.25,0.05);
+			guirc.add(rotControls,'rotz',-.25,.25,0.05);
+
+			function doRender() {
+
+				
+				requestAnimationFrame(doRender);
+				cameraControls.update();
+				stats.update();
+				objecto.rotation.x += rotControls.rotx;
+				objecto.rotation.y += rotControls.roty;
+				objecto.rotation.z += rotControls.rotz;
+
+				miniobjecto.rotation.x += rotControls.rotx;
+				miniobjecto.rotation.y += rotControls.roty;
+				miniobjecto.rotation.z += rotControls.rotz;
+
+				// move lights according
+				delta = new Date().getTime();
+				//console.log(delta);
+				
+				spotLight.position.set(0,5*Math.cos(delta/1000),2*Math.sin(delta/1000));
+
+				// é necessario forcao o update  
+				//spotLight.target.updateMatrixWorld();
+  				//spotLight.updateMatrixWorld();
+				  
+				slh.update();
+				//slh.updateMatrixWorld();
+
+				//spotLight.target = targetObject;
+
+
+				myrenderer.render(myscene,mycamera);
+			}
+
+			
+			doRender();
+
+
+
+</script>
+</html>
