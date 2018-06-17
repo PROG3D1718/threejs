@@ -1,0 +1,117 @@
+<!- Pedro Miguel Moreira 2018 -->
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset=utf-8>
+		<title>My Home</title>
+		<style>
+			body { margin: 0	; }
+			canvas { width: 100%; height: 100% }
+		</style>
+	</head>
+	<body>
+		<script src="js/three.js"></script>
+		<script>
+
+			// cria uma cena // create a scene
+			var scene = new THREE.Scene();
+			// cria uma camara // create a camera
+			var camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 0.1, 1000 );
+			
+			// cria o renderer / create a renderer
+			var renderer = new THREE.WebGLRenderer();
+			renderer.setSize( window.innerWidth, window.innerHeight );
+			document.body.appendChild( renderer.domElement );
+
+
+			const CELLSIZE = 0.5;
+			const COLS = 10;
+			const ROWS = 10;
+			const COLORS = [0xFF8888,0xAAAA33,0x99DDDD,0x7777EE];
+
+			// 2D map with city blocks
+			var cityMap = createMatrix(ROWS,COLS,0);
+			// 2D Array to implement the cityMap
+			function createMatrix(rows,cols,fillvalue) {
+				var matrix = Array(rows);
+				for (r = 0; r < rows; r++) {
+					matrix[r] = Array(cols);
+					for (c = 0; c < COLS; c++) {
+						matrix[r][c] = fillvalue;
+					}
+				}
+				return matrix;
+			}
+
+			// random generation of a city block info
+			function randomBuilding() {
+				var rtype = Math.floor(Math.random() * 2); // {0,1}
+				var rcolor = Math.floor(Math.random() * 4); // {0,1,2,3}
+				// may produce some other features (floors, etc)
+				var rBuilding = {
+					"type" : rtype ,
+					"color" : COLORS[rcolor]
+				}
+				return rBuilding;
+			}
+			
+			//populate the cityMap
+			function fillCityMap(map,rows,cols,fillerFunc) {
+				for(i=0; i<rows; i++) {
+					for(j=0; j<cols; j++) {
+						var value = fillerFunc();
+						console.log(value);
+						map[i][j] = value;
+					}
+				}
+			}
+			
+			// procedural generation of geometry of each city block
+			function doCity(map,rows,cols,size) {
+				var cityG = new THREE.Group();
+				for(r=0; r<rows; r++) {
+					for(c=0; c<cols; c++) {
+						if (map[r][c].type == 1) {
+							var cityGeom = new THREE.BoxGeometry( 0.9*size, 0.9*size, 0.9*size );
+							var cityMat = new THREE.MeshBasicMaterial( { color: map[r][c].color, wireframe : false } );
+							var cityBlock = new THREE.Mesh( cityGeom, cityMat );
+							cityBlock.translateY(0.9*size*.5);
+							cityBlock.translateX(r*size - rows * size * 0.5);
+							cityBlock.translateZ(c*size - cols * size * 0.5);
+							cityG.add(cityBlock);
+						}
+					}
+				}
+				return cityG;
+			}
+
+			fillCityMap(cityMap,ROWS,COLS,randomBuilding);
+			var cityGroup = doCity(cityMap,ROWS,COLS,CELLSIZE);
+
+			scene.add(cityGroup);
+	
+
+			var sceneAxesHelper = new THREE.AxesHelper( 5 );
+			scene.add( sceneAxesHelper );
+
+		
+		
+
+			// position the camera
+			camera.position.y = 10;
+			camera.position.z = 10;
+
+			// point the camera to a specific target (world origin)
+			camera.lookAt(new THREE.Vector3(0,0,0));
+			
+			animate();
+
+			function animate() {
+				renderer.render( scene, camera );
+				cityGroup.rotation.y += 0.02;
+				window.requestAnimationFrame(animate);
+			}
+
+		</script>
+	</body>
+</html>
